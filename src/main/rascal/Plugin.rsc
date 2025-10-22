@@ -1,6 +1,6 @@
-module Syntax
- layout Layout = WhitespaceAndComment* !>> [\ \t\n\r#];
- lexical WhitespaceAndComment = [\ \t\n\r] | @category="Comment" "#" ![\n]* $;
+module Plugin;
+layout Layout = WhitespaceAndComment* !>> [\ \t\n\r#];
+lexical WhitespaceAndComment = [\ \t\n\r] | @category="Comment" "#" ![\n]* $;
  start syntax Planning = planning: PersonTasks+ personList;
  syntax PersonTasks = personTasks: 'Person' ID name Task+ tasks;
  syntax Task = task: 'Task' Action action
@@ -25,6 +25,7 @@ module Syntax
  syntax Week = week:'week';
  lexical INT = ([\-0-9][0-9]* !>> [0-9]);
  lexical STRING = "\"" ![\"\n]* "\"";
- lexical ID = ([a-zA-Z/.\-][a-zA-Z0-9_/.]* !>> [a-zA-Z0-9_/.]) \ Reserved;
- keyword Reserved = "Person" | "Task" | "priority" | "duration" | "Lunch" | "Meeting"
+// simplified identifier rule; do not rely on post-filters here
+lexical ID = [a-zA-Z] [a-zA-Z0-9_./\-]* ;
+keyword Reserved = "Person" | "Task" | "priority" | "duration" | "Lunch" | "Meeting"
  | "Report" | "Pay" | "euro" | "min" | "hour" | "day" | "week" | ":";
