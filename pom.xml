@@ -33,6 +33,13 @@
       <artifactId>rascal</artifactId>
       <version>0.40.17</version>
     </dependency>
+
+    <dependency>  
+        <groupId>org.rascalmpl</groupId>
+        <artifactId>rascal-lsp</artifactId>
+        <version>2.21.0</version>
+    </dependency>
+
   </dependencies>
 
   <build>

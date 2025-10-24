@@ -1,22 +1,7 @@
 module Parser
 
-import ParseTree;
-import IO;
 import Syntax;
-import lang::rascal::syntax::Concrete; // utilidades de parsing
+import ParseTree;
 
-public Tree parseProgramFromString(str src, loc origin) {
-  // parse devuelve un Tree (parse tree)
-  return parse(#start[Program], src, origin);
-}
-
-public Tree parseProgramFromFile(loc file) {
-  str src = readFile(file);
-  return parseProgramFromString(src, file);
-}
-
-// función de prueba para imprimir el Tree en consola (estructura legible)
-public void printParseTreeFromFile(loc file) {
-  Tree t = parseProgramFromFile(file);
-  println(t);
-}
+public start[Planning] parsePlanning(str src, loc origin) = parse(#start[Planning], src, origin);
+public start[Planning] parsePlanning(loc origin) = parse(#start[Planning], origin);
