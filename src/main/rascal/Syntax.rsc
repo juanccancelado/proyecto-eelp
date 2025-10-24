@@ -1,60 +1,45 @@
-module Syntax;
+module Syntax
 
-/* Minimal placeholder module used to verify file-level parse errors.
-  If this fixes the parse problem, re-introduce syntax rules incrementally. */
+layout L = (" " | "\t" | "\r" | "\n")* ;
+lexical NL = "\\n" ;
 
-start syntax Program
-  = program: Module ( NL Module )* ;
+keyword KW = "cond" | "do" | "data" | "elseif" | "end"
+           | "for" | "from" | "then" | "function" | "else" | "if" | "in"
+           | "iterator" | "sequence" | "struct" | "to" | "tuple" | "type"
+           | "with" | "yielding" | "true" | "false" ;
 
-syntax Module
-  = functionDef: FunctionDef
-  | dataDef: DataDef
-  ;
+lexical ID     = [a-z] [a-z0-9]* !>> KW ;
+lexical NUMBER = [0-9]+ ("." [0-9]+)? ;
+lexical STRING = "\"" (!["\n\r" ] )* "\"" ;
 
-syntax FunctionDef
-  = id:ID "=" "function" "(" ParamList? ")" "do" NL Block "end" ID
-  ;
+start syntax Program = ModuleDecl+ ;
+
+
+syntax FunctionDef = ID "=" "function" "(" ParamList? ")" "do" NL Block "end" ID ;
+syntax DataDef     = ID "=" "data" "with" IDList NL RepDef NL MethodList "end" ID ;
+syntax ModuleDecl  = FunctionDef | DataDef ;
 
 syntax ParamList = ID ( "," ID )* ;
+syntax IDList    = ID ( "," ID )* ;
 
-syntax DataDef
-  = id:ID "=" "data" "with" IdList NL RepDef NL MethodList "end" ID
-  ;
-
-syntax IdList = ID ( "," ID )* ;
-
-syntax RepDef = id:ID "=" "struct" "(" FieldList ")" ;
+syntax RepDef    = ID "=" "struct" "(" FieldList ")" ;
 syntax FieldList = ID ( "," ID )* ;
+syntax MethodList= FunctionDef ( NL FunctionDef )* ;
 
-syntax MethodList = Method ( NL Method )* ;
-syntax Method = FunctionDef ;
 
 syntax Block = ( Statement NL )* ;
 
 syntax Statement
-  = declaration: Declaration
-  | assignment: Assignment
-  | control: Control
-  | exprStmt: Expr
-  ;
-
-syntax Declaration = ID ( "," ID )* ;
-syntax Assignment  = ID "=" Expr ;
-
-syntax Control
-  = IfExpr
+  = ID ( "," ID )*
+  | ID "=" Expr
+  | IfExpr
   | CondExpr
   | ForStmt
+  | Expr
   ;
 
-syntax IfExpr
-  = "if" Expr "then" NL Block "else" NL Block "end"
-  ;
-
-syntax CondExpr
-  = "cond" Expr "do" CondClause ( NL CondClause )* "end"
-  ;
-
+syntax IfExpr  = "if" Expr "then" NL Block "else" NL Block "end" ;
+syntax CondExpr= "cond" Expr "do" CondClause ( NL CondClause )* "end" ;
 syntax CondClause = Expr "->" Expr ;
 
 syntax ForStmt
@@ -64,38 +49,90 @@ syntax ForStmt
 
 syntax IteratorExpr = "iterator" "(" Expr ")" "yielding" "(" ID ")" ;
 
+
 syntax Expr
   = Literal
   | ID
-  | CallExpr
-  | MemberAccess
-  | InternalCall
+  | ID "(" ArgList? ")"
+  | Expr "." ID
+  | ID "$" "(" ArgList? ")"
   | "(" Expr ")"
-  | UnaryOp Expr
-  | Expr BinaryOp Expr
-  | Tuple
-  | Sequence
+  | ( "neg" | "-" ) Expr
+  | Expr ( "+" | "-" | "*" | "/" | "%" | "**" | "<" | ">" | "<=" | ">=" | "<>" | "=" | "and" | "or" ) Expr
+  | "(" Expr ( "," Expr )+ ")"
+  | "[" ( Expr ( "," Expr )* )? "]"
   ;
-
-syntax CallExpr = ID "(" ArgList? ")" ;
-syntax MemberAccess = Expr "." ID ;
-syntax InternalCall = ID "$" "(" ArgList? ")" ;
 
 syntax ArgList = Arg ( "," Arg )* ;
-syntax Arg = Expr | ID ":" Expr ;
+syntax Arg     = Expr | ID ":" Expr ;
 
-syntax Tuple = "(" Expr ( "," Expr )+ ")" ;       // tuple: require comma to avoid ambiguity with grouping
-syntax Sequence = "[" ( Expr ( "," Expr )* )? "]" ;
+syntax Literal = NUMBER | STRING | "true" | "false" ;
 
-syntax Literal
-  = number:NUMBER
-  | string:STRING
-  | char:CHAR
-  | boolean:("true" | "false")
+/* End of Syntax.rsc */
+module Syntax
+
+layout L = [\ \t\r\n]*;
+lexical NL = "\n";
+
+keyword KW = "cond" | "do" | "data" | "elseif" | "end"
+           | "for" | "from" | "then" | "function" | "else" | "if" | "in"
+           | "iterator" | "sequence" | "struct" | "to" | "tuple" | "type"
+           | "with" | "yielding" | "true" | "false" ;
+
+lexical ID = [a-z] [a-z0-9]* !>> KW ;
+lexical NUMBER = [0-9]+ ("." [0-9]+)? ;
+// CHAR literal removed to avoid lexical parse problems; use STRING for quoted text.
+lexical STRING = "\"" (!["\n\r"])* "\"";
+
+start syntax program = moduleDecl+ ;
+
+syntax functionDef = ID "=" "function" "(" paramList? ")" "do" NL block "end" ID ;
+syntax dataDef     = ID "=" "data" "with" idList NL repDef NL methodList "end" ID ;
+syntax moduleDecl  = functionDef | dataDef ;
+
+syntax paramList = ID ( "," ID )* ;
+syntax idList = ID ( "," ID )* ;
+
+syntax repDef = ID "=" "struct" "(" fieldList ")" ;
+syntax fieldList = ID ( "," ID )* ;
+syntax methodList = functionDef ( NL functionDef )* ;
+
+syntax block = ( statement NL )* ;
+
+syntax statement
+  = ID ( "," ID )*
+  | ID "=" expr
+  | ifExpr
+  | condExpr
+  | forStmt
+  | expr
   ;
 
-lexical UnaryOp = "neg" | "-" ;
-lexical BinaryOp = "+" | "-" | "*" | "/" | "%" | "**"
-                 | "<" | ">" | "<=" | ">=" | "<>" | "="
-                 | "and" | "or" ;
+syntax ifExpr = "if" expr "then" NL block "else" NL block "end" ;
+syntax condExpr = "cond" expr "do" condClause ( NL condClause )* "end" ;
+syntax condClause = expr "->" expr ;
 
+syntax forStmt
+  = "for" ID "from" expr "to" expr "do" NL block "end"
+  | "for" ID "in" expr "do" NL block "end"
+  ;
+
+syntax iteratorExpr = "iterator" "(" expr ")" "yielding" "(" ID ")" ;
+
+syntax expr
+  = literal
+  | ID
+  | ID "(" argList? ")"
+  | expr "." ID
+  | ID "$" "(" argList? ")"
+  | "(" expr ")"
+  | ("neg" | "-") expr
+  | expr ("+"|"-"|"*"|"/"|"%"|"**"|"<"|">"|"<="|">="|"<>"|"="|"and"|"or") expr
+  | "(" expr ( "," expr )+ ")"
+  | "[" ( expr ( "," expr )* )? "]"
+  ;
+
+syntax argList = arg ( "," arg )* ;
+syntax arg = expr | ID ":" expr ;
+
+syntax literal = NUMBER | STRING | "true" | "false" ;
