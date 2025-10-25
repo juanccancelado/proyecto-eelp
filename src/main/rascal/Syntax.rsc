@@ -8,11 +8,11 @@ keyword KW = "cond" | "do" | "data" | "elseif" | "end"
            | "iterator" | "sequence" | "struct" | "to" | "tuple" | "type"
            | "with" | "yielding" | "true" | "false" ;
 
-lexical ID     = [a-z] [a-z0-9]* ; //No funcionan IDs con mayusculas
+lexical ID     = [a-z] [a-z0-9]* \ KW; 
 lexical NUMBER = [0-9]+ ("." [0-9]+)? ;
 lexical STRING = "\"" ![\"]*  "\""; 
 
-start syntax Program = ModuleDecl+ | Expr;
+start syntax Program = ModuleDecl+ | Expr | Block;
 
 
 syntax FunctionDef = ID "=" "function" "(" ParamList? ")" "do" NL Block "end" ID ;
@@ -30,12 +30,12 @@ syntax MethodList= FunctionDef ( NL FunctionDef )* ;
 syntax Block = ( Statement NL )* ;
 
 syntax Statement
-  = ID ( "," ID )+
+  = ID ( "," ID )+ // reemplazamos * por + para diferenciar ID y Expr
   | ID "=" Expr
   | IfExpr
   | CondExpr
   | ForStmt
-  | Expr  // Para que un statement sea una expresion tiene que estar entre parentesis
+  | Expr  
   ;
 
 syntax IfExpr  = "if" Expr "then" NL Block "else" NL Block "end" ;
@@ -54,7 +54,7 @@ syntax Expr
   = Literal
   | ID
   | ID "(" ArgList? ")"
-  | Expr "." ID
+  | Expr "." ID //Si hay operacion de punto, debe ir entre parentesis
   | ID "$" "(" ArgList? ")"
   | "(" Expr ")"
   | ( "neg" | "-" ) Expr
