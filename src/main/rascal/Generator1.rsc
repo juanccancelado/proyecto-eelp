@@ -1,101 +1,199 @@
 module Generator1
 
 import IO;
-import Set;
 import List;
-import AST;
-import Syntax;
 import String;
-
+import AST;
 import Parser;
-import Implode;
+import util::Math; // solo por si acaso (no es obligatorio)
 
-data GenTask = genTask(str action = "", int prio = 0, str duration = "");
-list[str] allPersons = []; // normally do not do this
-list[GenTask] allPlans = [];
+/*
+  Generator adaptado a tu AST.
+
+  Uso:
+    1) Asegúrate de tener un archivo de entrada (por ejemplo)
+       |project://rascaldsl/instance/spec1.rascal|
+       o cambia la ruta en main() por la que uses.
+    2) Ejecuta: run Generator1 in REPL/IDE (o usa el `main()` desde la CLI de Rascal).
+    3) Se escribirá: |project://rascaldsl/instance/output/generator1.txt|
+*/
 
 void main() {
-    cast = parsePlanning(|project://rascaldsl/instance/spec1.tdsl|);
-    rVal = generator1(cast);
-    println(rVal);
-    writeFile(|project://rascaldsl/instance/output/generator1.txt|, rVal);
+  // intenta parsear un archivo de ejemplo en el proyecto (cambia la ruta si hace falta)
+  loc src = |project://rascaldsl/instance/spec1.rascal|;
+  Program ast = <Program> { /* placeholder */ };
+
+  try {
+    // usa el parser que definiste en Parser.rsc
+    ast = Parser::parseProgram(src);
+  } catch (ParseError pe) {
+    println("No se pudo parsear el archivo " + toString(src) + ": <pe>");
+    return;
+  }
+
+  str out = generator(ast);
+
+  // imprime y escribe a archivo de salida
+  println("=== Generador: salida ===");
+  println(out);
+  // asegúrate de que la carpeta instance/output exista en tu proyecto
+  loc outLoc = |project://rascaldsl/instance/output/generator1.txt|;
+  writeFile(outLoc, out);
+  println("Generado: <outLoc>");
 }
 
-str generator1(cast) {
-    ast = implode(cast);
-    allPersons = []; // init to empty for the case you want to generate a second file
-    allPlans = [];
-    generate(ast);
-    rVal = 
-        "Info of the planning DepartmentABC
-        'All Persons:
-	    '       <for (person <- allPersons) {><person>
-        '       <}>
-        'All actions of tasks:
-        '======
-        '       <intercalate(" &\n", 
-                [ "<plan.action> <plan.prio> <plan.duration>" | plan <- allPlans])>
-        '=====
-        'Other way of listing all tasks:
-        '       <intercalate(" ,\n", [ "<plan.action> <plan.prio>" | plan <- allPlans])>
-        '";
-    return rVal;
+/* -------------------------
+   Entrada principal del generador
+   ------------------------- */
+
+str generator(Program program) {
+  // program(modules)
+  program(mods) = program;
+  list[str] parts = [
+    "=== Resumen del programa ===",
+    "Numero de declaraciones de modulo: <|mods|>"
+  ];
+
+  // detalles por módulo
+  for (m <- mods) {
+    parts += generateModuleDecl(m);
+  }
+
+  return join(parts, "\n\n");
 }
 
-void generate(Planning planning) {
-    for (personTask <- planning.personList) {
-        generate(personTask);
-    }
+/* -------------------------
+   Generadores por nodo
+   ------------------------- */
+
+str generateModuleDecl(ModuleDecl m) {
+  switch (m) {
+    case moduleFunc(functionDef(name, params, body)):
+      return "Module: function " + name + "\n" +
+             "  params: (" + join(params, ", ") + ")\n" +
+             "  body:\n" + indent(generateBlock(body), 4);
+    case moduleData(dataDef(name, fields, methods)):
+      list[str] mm = [ generateFunctionDef(fd) | fd <- methods ];
+      return "Module: data " + name + "\n" +
+             "  fields: (" + join(fields, ", ") + ")\n" +
+             "  methods:\n" + indent(join(mm, "\n\n"), 4);
+    default:
+      return "Module: (unknown)";
+  }
 }
 
-void generate(PersonTasks personTasks) {
-    allPersons += "<personTasks.name>";
-    for (task <- personTasks.tasks) {
-        generate(task);
-    }
+str generateFunctionDef(FunctionDef f) {
+  functionDef(fname, fparams, fbody) = f;
+  return "function " + fname + "(" + join(fparams, ", ") + ")\n" +
+         indent(generateBlock(fbody), 2);
 }
 
-void generate(Task task) {
-    rVal = genTask(action = generateAction(task.action)); // via constructor and via fields see next
-    rVal.prio = toInt("<task.prio>");
-    for (dur <- task.duration) {
-        rVal.duration = generateDuration(dur);
-    }
-    allPlans += rVal;
+str generateBlock(Block b) {
+  block(stmts) = b;
+  if (|stmts| == 0) {
+    return "(empty block)";
+  }
+  list[str] lines = [ generateStatement(s) | s <- stmts ];
+  return join(lines, "\n");
 }
 
-str generateAction(Action action) {
-    if (action.lunchAction?)   return generateAction(action.lunchAction);
-    if (action.meetingAction?) return generateAction(action.meetingAction);
-    if (action.paperAction?)   return generateAction(action.paperAction);
-    if (action.paymentAction?) return generateAction(action.paymentAction);
-    return "Unknown action!";
+str generateStatement(Statement s) {
+  switch (s) {
+    case assign(name, value):
+      return name + " = " + generateExpr(value) + ";";
+    case exprStmt(e):
+      return generateExpr(e) + ";";
+    case ifStmt(cond, thenB, elseB):
+      return "if " + generateExpr(cond) + " then\n" +
+             indent(generateBlock(thenB), 2) + "\nelse\n" +
+             indent(generateBlock(elseB), 2) + "\nend";
+    case forRange(var, start, end, body):
+      return "for " + var + " from " + generateExpr(start) + " to " + generateExpr(end) + " do\n" +
+             indent(generateBlock(body), 2) + "\nend";
+    case forIn(var, iterable, body):
+      return "for " + var + " in " + generateExpr(iterable) + " do\n" +
+             indent(generateBlock(body), 2) + "\nend";
+    default:
+      return "<unknown statement>";
+  }
 }
 
-str generateAction(LunchAction lunchAction) {
-    return "Lunch at location <lunchAction.location>";
+/* -------------------------
+   Expresiones
+   ------------------------- */
+
+str generateExpr(Expr e) {
+  switch (e) {
+    case literal(Literal l):
+      return generateLiteral(l);
+    case var(name):
+      return name;
+    case call(func, args):
+      return func + "(" + join([ generateExpr(a) | a <- args ], ", ") + ")";
+    case dollarCall(func, args):
+      return func + "$(" + join([ generateExpr(a) | a <- args ], ", ") + ")";
+    case dot(left, field):
+      return generateExpr(left) + "." + field;
+    case neg(ex):
+      return "-" + parenthesizeIfNeeded(ex);
+    case binOp(left, op, right):
+      return generateExpr(left) + " " + opToStr(op) + " " + generateExpr(right);
+    case tupleExpr(elems):
+      return "(" + join([ generateExpr(x) | x <- elems ], ", ") + ")";
+    case listExpr(elems):
+      return "[" + join([ generateExpr(x) | x <- elems ], ", ") + "]";
+    default:
+      return "<unknown expr>";
+  }
 }
 
-str generateAction(MeetingAction meetingAction) {
-    return "Meeting with topic <replaceAll(meetingAction.topic, "\"", "")>";
+str parenthesizeIfNeeded(Expr e) {
+  // para negaciones sencillas: si es binOp ponemos paréntesis
+  switch (e) {
+    case binOp(_, _, _):
+      return "(" + generateExpr(e) + ")";
+    default:
+      return generateExpr(e);
+  }
 }
 
-str generateAction(PaperAction paperAction) {
-    return "Paper for journal <paperAction.report>";
+str generateLiteral(Literal l) {
+  switch (l) {
+    case number(n): return n;
+    case string(s): return "\"" + replace(s, "\"", "\\\"") + "\"";
+    case boolTrue(): return "true";
+    case boolFalse(): return "false";
+    default: return "<lit?>";
+  }
 }
 
-str generateAction(PaymentAction paymentAction) {
-    return "Pay <paymentAction.amount> Euro";
+str opToStr(Op op) {
+  switch (op) {
+    case add(): return "+";
+    case sub(): return "-";
+    case mul(): return "*";
+    case div(): return "/";
+    case mod(): return "%";
+    case pow(): return "**";
+    case lt(): return "<";
+    case gt(): return ">";
+    case le(): return "<=";
+    case ge(): return ">=";
+    case eq(): return "==";
+    case ne(): return "<>";
+    case and(): return "and";
+    case or(): return "or";
+    default: return "<op?>";
+  }
 }
 
-str generateDuration(Duration dur) {
-    return "with duration: <dur.dl> <generateDuration(dur.unit)>";
-}
+/* -------------------------
+   Helpers
+   ------------------------- */
 
-str generateDuration(TimeUnit timeUnit) {
-    if (timeUnit.minute?) return "m";
-    if (timeUnit.hour?)   return "h";
-    if (timeUnit.day?)    return "d";
-    if (timeUnit.week?)   return "w";
-    return "Unknown time unit";
+str indent(str s, int n) {
+  // Indenta cada línea de s con n espacios.
+  list[str] lines = split(s, "\n");
+  str pad = repeat(" ", n);
+  return join([ pad + l | l <- lines ], "\n");
 }
