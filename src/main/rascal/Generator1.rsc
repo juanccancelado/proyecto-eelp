@@ -5,26 +5,31 @@ import List;
 import String;
 import AST;
 import Parser;
-import util::Math; // solo por si acaso (no es obligatorio)
 
-/*
-  Generator adaptado a tu AST.
 
-  Uso:
-    1) Asegúrate de tener un archivo de entrada (por ejemplo)
-       |project://rascaldsl/instance/spec1.rascal|
-       o cambia la ruta en main() por la que uses.
-    2) Ejecuta: run Generator1 in REPL/IDE (o usa el `main()` desde la CLI de Rascal).
-    3) Se escribirá: |project://rascaldsl/instance/output/generator1.txt|
-*/
+
+
 
 void main() {
-  // intenta parsear un archivo de ejemplo en el proyecto (cambia la ruta si hace falta)
   loc src = |project://rascaldsl/instance/spec1.rascal|;
-  Program ast = <Program> { /* placeholder */ };
+  Program ast;
 
   try {
-    // usa el parser que definiste en Parser.rsc
+    ast = Parser::parseProgram(src);
+  } 
+  catch ParseError pe {
+    println("Error al parsear: <pe>");
+    return;
+  }
+
+  str outText = generator(ast);
+  loc outLoc = |project://rascaldsl/instance/output/generator1.txt|;
+
+  writeFile(outLoc, outText);
+
+
+  try {
+    
     ast = Parser::parseProgram(src);
   } catch (ParseError pe) {
     println("No se pudo parsear el archivo " + toString(src) + ": <pe>");
@@ -36,15 +41,12 @@ void main() {
   // imprime y escribe a archivo de salida
   println("=== Generador: salida ===");
   println(out);
-  // asegúrate de que la carpeta instance/output exista en tu proyecto
+ 
   loc outLoc = |project://rascaldsl/instance/output/generator1.txt|;
   writeFile(outLoc, out);
   println("Generado: <outLoc>");
 }
 
-/* -------------------------
-   Entrada principal del generador
-   ------------------------- */
 
 str generator(Program program) {
   // program(modules)
@@ -62,9 +64,7 @@ str generator(Program program) {
   return join(parts, "\n\n");
 }
 
-/* -------------------------
-   Generadores por nodo
-   ------------------------- */
+
 
 str generateModuleDecl(ModuleDecl m) {
   switch (m) {
@@ -118,9 +118,6 @@ str generateStatement(Statement s) {
   }
 }
 
-/* -------------------------
-   Expresiones
-   ------------------------- */
 
 str generateExpr(Expr e) {
   switch (e) {
@@ -148,7 +145,7 @@ str generateExpr(Expr e) {
 }
 
 str parenthesizeIfNeeded(Expr e) {
-  // para negaciones sencillas: si es binOp ponemos paréntesis
+  
   switch (e) {
     case binOp(_, _, _):
       return "(" + generateExpr(e) + ")";
@@ -187,12 +184,7 @@ str opToStr(Op op) {
   }
 }
 
-/* -------------------------
-   Helpers
-   ------------------------- */
-
 str indent(str s, int n) {
-  // Indenta cada línea de s con n espacios.
   list[str] lines = split(s, "\n");
   str pad = repeat(" ", n);
   return join([ pad + l | l <- lines ], "\n");
