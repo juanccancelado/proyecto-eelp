@@ -8,7 +8,7 @@ keyword KW = "cond" | "do" | "data" | "elseif" | "end"
            | "iterator" | "sequence" | "struct" | "to" | "tuple" | "type"
            | "with" | "yielding" | "true" | "false" ;
 
-lexical ID     = [a-z] [a-z0-9]* ;
+lexical ID     = [a-z] [a-z0-9]* ; //No funcionan IDs con mayusculas
 lexical NUMBER = [0-9]+ ("." [0-9]+)? ;
 lexical STRING = "\"" ![\"]*  "\""; 
 
@@ -30,12 +30,12 @@ syntax MethodList= FunctionDef ( NL FunctionDef )* ;
 syntax Block = ( Statement NL )* ;
 
 syntax Statement
-  = ID ( "," ID )*
+  = ID ( "," ID )+
   | ID "=" Expr
   | IfExpr
   | CondExpr
   | ForStmt
-  | Expr
+  | Expr  // Para que un statement sea una expresion tiene que estar entre parentesis
   ;
 
 syntax IfExpr  = "if" Expr "then" NL Block "else" NL Block "end" ;
