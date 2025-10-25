@@ -3,5 +3,5 @@ module Parser
 import Syntax;
 import ParseTree;
 
-public start[Planning] parsePlanning(str src, loc origin) = parse(#start[Planning], src, origin);
-public start[Planning] parsePlanning(loc origin) = parse(#start[Planning], origin);
+public start[Program] parseProgram(str src, loc origin) = parse(#start[Program], src, origin);
+public start[Program] parseProgram(loc origin) = parse(#start[Program], origin);

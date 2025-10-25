@@ -7,5 +7,5 @@ import AST;
 import ParseTree;
 import Node;
 
-public Planning implode(Tree pt) = implode(#Planning, pt);
-public Planning load(loc l) = implode(#Planning, parsePlanning(l));
+public Program implode(Tree pt) = implode(#Program, pt);
+public Program load(loc l) = implode(#Program, parsePlanning(l));

@@ -13,9 +13,9 @@ PathConfig pcfg = getProjectPathConfig(|project://rascaldsl|);
 Language tdslLang = language(pcfg, "TDSL", "tdsl", "Plugin", "contribs");
 
 set[LanguageService] contribs() = {
-    parser(start[Planning] (str program, loc src) {
+    parser(start[Program] (str program, loc src) {
         println("Run parser");
-        return parse(#start[Planning], program, src);
+        return parse(#start[Program], program, src);
     })
 };
 
