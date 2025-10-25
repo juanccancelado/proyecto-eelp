@@ -1,18 +1,18 @@
 module Syntax
 
 layout L = (" " | "\t" | "\r" | "\n")* ;
-lexical NL = "\\n" ;
+lexical NL = "\n" ;
 
 keyword KW = "cond" | "do" | "data" | "elseif" | "end"
            | "for" | "from" | "then" | "function" | "else" | "if" | "in"
            | "iterator" | "sequence" | "struct" | "to" | "tuple" | "type"
            | "with" | "yielding" | "true" | "false" ;
 
-lexical ID     = [a-z] [a-z0-9]* !>> KW ;
+lexical ID     = [a-z] [a-z0-9]* ;
 lexical NUMBER = [0-9]+ ("." [0-9]+)? ;
 lexical STRING = "\"" ![\"]*  "\""; 
 
-start syntax Program = ModuleDecl+ ;
+start syntax Program = ModuleDecl+ | Expr;
 
 
 syntax FunctionDef = ID "=" "function" "(" ParamList? ")" "do" NL Block "end" ID ;
@@ -58,7 +58,7 @@ syntax Expr
   | ID "$" "(" ArgList? ")"
   | "(" Expr ")"
   | ( "neg" | "-" ) Expr
-  | Expr ( "+" | "-" | "*" | "/" | "%" | "**" | "\<" | "\>" | "\<=" | "\>=" | "\<\>" | "=" | "and" | "or" ) Expr
+  | Expr ( "+" | "-" | "*" | "/" | "%" | "**" | "\<" | "\>" | "\<=" | "\>=" | "\<\>" | "==" | "and" | "or" ) Expr
   | "(" Expr ( "," Expr )+ ")"
   | "[" ( Expr ( "," Expr )* )? "]"
   ;
