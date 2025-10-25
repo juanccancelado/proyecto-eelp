@@ -15,7 +15,7 @@ import Implode;
 //list[GenTask] allPlans = [];
 
 void main() {
-    cast = parsePlanning(|project://rascaldsl/instance/spec1.tdsl|);
+    cast = parsePlanning(|project://rascaldsl/instance/spec1.alu|);
     rVal = generator1(cast);
     println(rVal);
     writeFile(|project://rascaldsl/instance/output/generator1.txt|, rVal);
@@ -24,21 +24,6 @@ void main() {
 list[str] allFunctions = [];
 list[str] allData = [];
 
-
-
-void main() {
-    // Cambia la ruta según tu proyecto o archivo fuente TDSL
-    loc src = |project://rascaldsl/instance/example.tdsl|;
-    str code = readFile(src);
-
-    tree = parse(#start[Program], code);
-    ast = implode(tree);
-
-    str output = generator(ast);
-
-    println(output);
-    writeFile(|project://rascaldsl/instance/output/output.txt|, output);
-}
 
 str generator(Program p) {
     allFunctions = [];
