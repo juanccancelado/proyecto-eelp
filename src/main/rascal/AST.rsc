@@ -1,22 +1,37 @@
 module AST
 
-data Planning = planning(set[PersonTasks] personList);
-data PersonTasks = personTasks(str name, list[Task] tasks);
-data Task = task(Action action, int prio, list[Duration] duration);
-data Duration = duration(int dl, TimeUnit unit);
-data Action = lunch(LunchAction lunchAction) 
-            | meeting(MeetingAction meetingAction)
-            | paper(PaperAction paperAction) 
-            | payment(PaymentAction paymentAction);
-data LunchAction = lunchAction(str location);
-data MeetingAction = meetingAction(str topic);
-data PaperAction = paperAction(str report);
-data PaymentAction = paymentAction(int amount);
-data TimeUnit = minute(Minute minute)
-              | hour(Hour hour)
-              | day(Day day)
-              | week(Week week);
-data Minute = minute();
-data Hour = hour();
-data Day = day();
-data Week = week();
+data Program       = program(list[ModuleDecl] modules);
+data ModuleDecl    = moduleFunc(FunctionDef functionDef)
+                   | moduleData(DataDef dataDef);
+
+data FunctionDef   = functionDef(str name, list[str] params, Block body);
+data DataDef       = dataDef(str name, list[str] fields, list[FunctionDef] methods);
+
+data Block         = block(list[Statement] statements);
+
+data Statement     = assign(str name, Expr value)
+                   | exprStmt(Expr expr)
+                   | ifStmt(Expr cond, Block thenBlock, Block elseBlock)
+                   | forRange(str var, Expr start, Expr end, Block body)
+                   | forIn(str var, Expr iterable, Block body);
+
+data Expr          = literal(Literal value)
+                   | var(str name)
+                   | call(str func, list[Expr] args)
+                   | dollarCall(str func, list[Expr] args)
+                   | dot(Expr left, str field)
+                   | neg(Expr expr)
+                   | binOp(Expr left, Op op, Expr right)
+                   | tupleExpr(list[Expr] elems)
+                   | listExpr(list[Expr] elems);
+
+data Arg           = arg(Expr expr) | namedArg(str name, Expr expr);
+
+data Literal       = number(str n)
+                   | string(str s)
+                   | boolTrue()
+                   | boolFalse();
+
+data Op            = add() | sub() | mul() | div() | mod() | pow()
+                   | lt() | gt() | le() | ge() | eq() | ne()
+                   | and() | or();
