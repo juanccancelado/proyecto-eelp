@@ -1,5 +1,7 @@
 module AST
 
+
+
 data Program       = program(list[ModuleDecl] modules);
 data ModuleDecl    = moduleFunc(FunctionDef functionDef)
                    | moduleData(DataDef dataDef);
